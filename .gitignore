@@ -1,0 +1,21 @@
+# .NET
+OpsAI.Api/bin/
+OpsAI.Api/obj/
+
+# Node
+ops-ui/node_modules/
+ops-ui/dist/
+
+# IDE
+.vs/
+.vscode/
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+appsettings.*.local.json
+OpsAI.Api/appsettings.json
+*.env
