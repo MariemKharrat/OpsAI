@@ -123,13 +123,17 @@ export default function TriageResultPage() {
         <Card title="Matched Knowledge Articles" subtitle="Relevant articles found for this issue">
           <div className="space-y-3">
             {articles.map(article => (
-              <div key={article.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+              <div key={article.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg group cursor-pointer">
                 <BookOpen className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm text-gray-900">{article.title}</p>
-                  <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                  <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 group-hover:hidden">
                     {article.content.replace(/[#*\n]/g, ' ').substring(0, 150)}...
                   </p>
+                  {/* Full content shown on hover */}
+                  <div className="hidden group-hover:block mt-1 p-2 bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
+                    <p className="text-xs text-gray-700 whitespace-pre-wrap">{article.content.replace(/[#*]/g, '')}</p>
+                  </div>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs text-gray-400">{article.viewCount} views</span>
                     <span className="text-xs text-gray-400">•</span>

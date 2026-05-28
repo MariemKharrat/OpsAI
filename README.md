@@ -548,12 +548,14 @@ The application is **connected to real Azure AI services** via Azure AI Foundry.
   "AzureAISearch": {
     "Endpoint": "https://your-search.search.windows.net",
     "ApiKey": "your-api-key",
-    "IndexName": "opsai-knowledge"
+    "IndexName": "kb-index"
   }
 }
 ```
 
 > **Note**: For AI Foundry endpoints, use the base service URL (e.g., `https://name.services.ai.azure.com`) — do NOT include `/api/projects/...` path. The SDK handles routing internally.
+
+> **Azure AI Search**: The `kb-index` must have a **semantic configuration** named `"default"` configured in the Azure portal. Set the title field to `title`, content field to `content`, and keyword field to `tags`. Without this, semantic search queries will fail.
 
 ### Automatic Fallback Behavior
 

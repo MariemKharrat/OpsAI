@@ -216,13 +216,17 @@ export default function ResolutionWorkspace() {
                 </button>
               </div>
               {kbResults.length > 0 && (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
+                <div className="space-y-2 max-h-96 overflow-y-auto">
                   {kbResults.map(article => (
-                    <div key={article.id} className="p-2 bg-gray-50 rounded-lg">
+                    <div key={article.id} className="p-2 bg-gray-50 rounded-lg cursor-pointer group">
                       <p className="text-xs font-medium text-gray-900">{article.title}</p>
-                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 group-hover:hidden">
                         {article.content.replace(/[#*\n]/g, ' ').substring(0, 100)}
                       </p>
+                      {/* Full content shown on hover */}
+                      <div className="hidden group-hover:block mt-1 p-2 bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
+                        <p className="text-xs text-gray-700 whitespace-pre-wrap">{article.content.replace(/[#*]/g, '')}</p>
+                      </div>
                     </div>
                   ))}
                 </div>

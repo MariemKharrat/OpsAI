@@ -111,9 +111,18 @@ public class AzureAiSearchService : IKnowledgeSearchService
 
 public class SearchArticleDocument
 {
+    [System.Text.Json.Serialization.JsonPropertyName("id")]
     public string Id { get; set; } = "";
+
+    [System.Text.Json.Serialization.JsonPropertyName("title")]
     public string Title { get; set; } = "";
+
+    [System.Text.Json.Serialization.JsonPropertyName("content")]
     public string Content { get; set; } = "";
+
+    [System.Text.Json.Serialization.JsonPropertyName("category")]
     public int? Category { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("tags")]
     public string[]? Tags { get; set; }
 }
