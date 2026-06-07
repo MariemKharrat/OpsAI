@@ -9,7 +9,7 @@ An enterprise IT support ticketing system with AI-powered triage, knowledge retr
 | Frontend | React 19 + TypeScript + Vite + Tailwind CSS |
 | Backend | .NET 10 Web API |
 | Database | Azure Cosmos DB (NoSQL) |
-| AI | Azure OpenAI (GPT-4o) + Azure AI Search + Azure AI Foundry |
+| AI | Azure OpenAI (GPT-4o) + Azure AI Search |
 
 ---
 ![alt text](Home.png)
