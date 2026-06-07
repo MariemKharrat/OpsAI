@@ -12,7 +12,8 @@ An enterprise IT support ticketing system with AI-powered triage, knowledge retr
 | AI | Azure OpenAI (GPT-4o) + Azure AI Search + Azure AI Foundry |
 
 ---
-![alt text](image.png)
+![alt text](Home.png)
+
 ## Application Workflow
 
 The complete end-to-end workflow from ticket submission to resolution, showing how each feature maps to Azure AI services:
