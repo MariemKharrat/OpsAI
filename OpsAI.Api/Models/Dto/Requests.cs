@@ -44,3 +44,14 @@ public class DashboardStats
     public Dictionary<string, int> ByCategory { get; set; } = new();
     public List<Ticket> RecentTickets { get; set; } = [];
 }
+
+public class SimilarResolvedTicket
+{
+    public string Id { get; set; } = string.Empty;
+    public string TicketNumber { get; set; } = string.Empty;
+    public string Subject { get; set; } = string.Empty;
+    public TicketCategory Category { get; set; }
+    public DateTime? ResolvedAt { get; set; }
+    public string ResolutionSummary { get; set; } = string.Empty;
+    public List<string> ResolutionSteps { get; set; } = [];
+}

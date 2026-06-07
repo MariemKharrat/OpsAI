@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Bot, Search, Lightbulb, MessageSquare, AlertTriangle,
-  CheckCircle2, Loader2, BookOpen, ArrowUpRight, Clock
+  CheckCircle2, Loader2, BookOpen, ArrowUpRight, Clock, History
 } from 'lucide-react';
-import { getTicket, suggestResolution, draftResponse, escalateTicket, searchArticles } from '../services/api';
+import { getTicket, getSimilarResolved, suggestResolution, draftResponse, escalateTicket, searchArticles } from '../services/api';
 import { Card } from '../components/Card';
+import ExpandableArticle from '../components/ExpandableArticle';
 import { PriorityBadge, StatusBadge } from '../components/Badge';
-import type { Ticket, KnowledgeArticle, ResolutionSuggestion, DraftResponseResult } from '../types';
+import type { Ticket, KnowledgeArticle, ResolutionSuggestion, DraftResponseResult, SimilarResolvedTicket } from '../types';
 
 export default function ResolutionWorkspace() {
   const { id } = useParams<{ id: string }>();
@@ -20,12 +21,17 @@ export default function ResolutionWorkspace() {
   const [kbQuery, setKbQuery] = useState('');
   const [aiLoading, setAiLoading] = useState<string | null>(null);
   const [notes, setNotes] = useState('');
+  const [draftText, setDraftText] = useState('');
   const [escalateReason, setEscalateReason] = useState('');
   const [showEscalate, setShowEscalate] = useState(false);
+  const [similarTickets, setSimilarTickets] = useState<SimilarResolvedTicket[]>([]);
+  const [similarLoading, setSimilarLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     getTicket(id).then(r => { setTicket(r.data); setLoading(false); }).catch(() => setLoading(false));
+    setSimilarLoading(true);
+    getSimilarResolved(id).then(r => setSimilarTickets(r.data)).catch(() => {}).finally(() => setSimilarLoading(false));
   }, [id]);
 
   const handleSuggestResolution = async () => {
@@ -43,6 +49,7 @@ export default function ResolutionWorkspace() {
     try {
       const res = await draftResponse(id);
       setDraft(res.data);
+      setDraftText(res.data.draftResponse);
     } finally { setAiLoading(null); }
   };
 
@@ -163,10 +170,21 @@ export default function ResolutionWorkspace() {
 
           {/* Draft Response */}
           {draft && (
-            <Card title="Draft Response" subtitle="AI-generated response to send to requester">
-              <pre className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 p-4 rounded-lg font-sans">
-                {draft.draftResponse}
-              </pre>
+            <Card title="Draft Response" subtitle="Edit and send to requester">
+              <textarea
+                rows={8}
+                value={draftText}
+                onChange={e => setDraftText(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y"
+              />
+              <div className="flex justify-end mt-3">
+                <button
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Send Reply
+                </button>
+              </div>
             </Card>
           )}
 
@@ -218,20 +236,50 @@ export default function ResolutionWorkspace() {
               {kbResults.length > 0 && (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {kbResults.map(article => (
-                    <div key={article.id} className="p-2 bg-gray-50 rounded-lg cursor-pointer group">
-                      <p className="text-xs font-medium text-gray-900">{article.title}</p>
-                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 group-hover:hidden">
-                        {article.content.replace(/[#*\n]/g, ' ').substring(0, 100)}
-                      </p>
-                      {/* Full content shown on hover */}
-                      <div className="hidden group-hover:block mt-1 p-2 bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
-                        <p className="text-xs text-gray-700 whitespace-pre-wrap">{article.content.replace(/[#*]/g, '')}</p>
-                      </div>
-                    </div>
+                    <ExpandableArticle key={article.id} article={article} compact />
                   ))}
                 </div>
               )}
             </div>
+          </Card>
+
+          {/* Similar Resolved Tickets */}
+          <Card title="Similar Resolved Tickets" subtitle="Same category, successfully resolved">
+            {similarLoading ? (
+              <div className="space-y-2 animate-pulse">
+                {[1, 2].map(i => <div key={i} className="h-16 bg-gray-100 rounded" />)}
+              </div>
+            ) : similarTickets.length === 0 ? (
+              <p className="text-xs text-gray-500 text-center py-4">No similar resolved tickets found.</p>
+            ) : (
+              <div className="space-y-3">
+                {similarTickets.map(st => (
+                  <div key={st.id} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                    <div className="flex items-center gap-2 mb-1">
+                      <History className="w-3.5 h-3.5 text-green-600" />
+                      <span className="text-xs font-mono text-gray-500">{st.ticketNumber}</span>
+                      {st.resolvedAt && (
+                        <span className="text-xs text-gray-400 ml-auto">
+                          {new Date(st.resolvedAt).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs font-medium text-gray-900 mb-1.5">{st.subject}</p>
+                    <div className="bg-green-50 border border-green-100 rounded p-2">
+                      <p className="text-xs font-medium text-green-800 mb-1">Resolution:</p>
+                      <p className="text-xs text-green-700">{st.resolutionSummary}</p>
+                      {st.resolutionSteps.length > 0 && (
+                        <ol className="mt-1.5 space-y-0.5 list-decimal list-inside">
+                          {st.resolutionSteps.map((step, i) => (
+                            <li key={i} className="text-xs text-green-700">{step}</li>
+                          ))}
+                        </ol>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
 
           {/* Ticket Meta */}

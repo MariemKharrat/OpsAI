@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Bot, ArrowRight, BookOpen, Target, Brain, User, Tag } from 'lucide-react';
-import { getTicket, getTriageResult, getArticle } from '../services/api';
+import { Bot, ArrowRight, BookOpen, Target, Brain, User, Tag, CheckCircle2 } from 'lucide-react';
+import { getTicket, getTriageResult, getArticle, updateTicket } from '../services/api';
 import { Card } from '../components/Card';
+import ExpandableArticle from '../components/ExpandableArticle';
 import { PriorityBadge, StatusBadge, CategoryBadge, Badge } from '../components/Badge';
 import type { Ticket, TriageResult, KnowledgeArticle } from '../types';
 
@@ -13,6 +14,8 @@ export default function TriageResultPage() {
   const [triage, setTriage] = useState<TriageResult | null>(null);
   const [articles, setArticles] = useState<KnowledgeArticle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [assigning, setAssigning] = useState(false);
+  const [assigned, setAssigned] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -29,6 +32,22 @@ export default function TriageResultPage() {
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [id]);
+
+  const handleAcceptAndAssign = async () => {
+    if (!id || !triage?.suggestedAssignee) return;
+    setAssigning(true);
+    try {
+      await updateTicket(id, {
+        assignee: triage.suggestedAssignee,
+        priority: triage.suggestedPriority,
+        category: triage.suggestedCategory,
+        status: 'Open',
+      } as any);
+      setAssigned(true);
+    } finally {
+      setAssigning(false);
+    }
+  };
 
   if (loading) return <div className="animate-pulse"><div className="h-96 bg-gray-200 rounded-xl" /></div>;
   if (!ticket || !triage) return <p className="text-red-500">Triage result not found.</p>;
@@ -48,12 +67,28 @@ export default function TriageResultPage() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900">{ticket.subject}</h1>
         </div>
-        <button
-          onClick={() => navigate(`/tickets/${id}/workspace`)}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-        >
-          Continue to Workspace <ArrowRight className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {triage.suggestedAssignee && (
+            <button
+              onClick={handleAcceptAndAssign}
+              disabled={assigning || assigned}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                assigned
+                  ? 'bg-green-100 text-green-700 cursor-default'
+                  : 'bg-green-600 text-white hover:bg-green-700 disabled:opacity-50'
+              }`}
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              {assigned ? 'Assigned!' : assigning ? 'Assigning...' : `Accept & Assign to ${triage.suggestedAssignee}`}
+            </button>
+          )}
+          <button
+            onClick={() => navigate(`/tickets/${id}/workspace`)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            Continue to Workspace <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Confidence Score */}
@@ -120,27 +155,10 @@ export default function TriageResultPage() {
 
       {/* Matched KB Articles */}
       {articles.length > 0 && (
-        <Card title="Matched Knowledge Articles" subtitle="Relevant articles found for this issue">
+        <Card title="Matched Knowledge Articles" subtitle="Click an article to expand">
           <div className="space-y-3">
             {articles.map(article => (
-              <div key={article.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg group cursor-pointer">
-                <BookOpen className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm text-gray-900">{article.title}</p>
-                  <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 group-hover:hidden">
-                    {article.content.replace(/[#*\n]/g, ' ').substring(0, 150)}...
-                  </p>
-                  {/* Full content shown on hover */}
-                  <div className="hidden group-hover:block mt-1 p-2 bg-white border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
-                    <p className="text-xs text-gray-700 whitespace-pre-wrap">{article.content.replace(/[#*]/g, '')}</p>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-gray-400">{article.viewCount} views</span>
-                    <span className="text-xs text-gray-400">•</span>
-                    <span className="text-xs text-green-600">{article.helpfulCount} found helpful</span>
-                  </div>
-                </div>
-              </div>
+              <ExpandableArticle key={article.id} article={article} />
             ))}
           </div>
         </Card>

@@ -2,7 +2,7 @@ import axios from 'axios';
 import type {
   Ticket, TicketListResponse, DashboardStats,
   KnowledgeArticle, TriageResult, ResolutionSuggestion,
-  DraftResponseResult, Resolution, AuditEntry
+  DraftResponseResult, Resolution, AuditEntry, SimilarResolvedTicket
 } from '../types';
 
 const api = axios.create({ baseURL: '/api' });
@@ -13,6 +13,9 @@ export const getTickets = (params?: {
 }) => api.get<TicketListResponse>('/tickets', { params });
 
 export const getTicket = (id: string) => api.get<Ticket>(`/tickets/${id}`);
+
+export const getSimilarResolved = (id: string) =>
+  api.get<SimilarResolvedTicket[]>(`/tickets/${id}/similar-resolved`);
 
 export const createTicket = (data: {
   subject: string; description: string; requesterName: string;

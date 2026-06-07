@@ -77,6 +77,16 @@ export interface AuditEntry {
   timestamp: string;
 }
 
+export interface SimilarResolvedTicket {
+  id: string;
+  ticketNumber: string;
+  subject: string;
+  category: TicketCategory;
+  resolvedAt?: string;
+  resolutionSummary: string;
+  resolutionSteps: string[];
+}
+
 export interface DashboardStats {
   totalTickets: number;
   openTickets: number;

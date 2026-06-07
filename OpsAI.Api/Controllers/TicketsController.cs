@@ -130,6 +130,43 @@ public class TicketsController : ControllerBase
         return NoContent();
     }
 
+    [HttpGet("{id}/similar-resolved")]
+    public async Task<ActionResult<List<SimilarResolvedTicket>>> GetSimilarResolved(string id)
+    {
+        var ticket = await _db.GetTicketAsync(id);
+        if (ticket == null) return NotFound();
+
+        var resolved = await _db.GetTicketsAsync(
+            status: TicketStatus.Resolved,
+            category: ticket.Category,
+            page: 1,
+            pageSize: 10);
+
+        // Exclude the current ticket and limit to 3
+        var similar = resolved
+            .Where(t => t.Id != id)
+            .Take(3)
+            .ToList();
+
+        var results = new List<SimilarResolvedTicket>();
+        foreach (var t in similar)
+        {
+            var resolution = await _db.GetResolutionByTicketIdAsync(t.Id);
+            results.Add(new SimilarResolvedTicket
+            {
+                Id = t.Id,
+                TicketNumber = t.TicketNumber,
+                Subject = t.Subject,
+                Category = t.Category,
+                ResolvedAt = t.ResolvedAt,
+                ResolutionSummary = resolution?.Summary ?? "No resolution note available",
+                ResolutionSteps = resolution?.Steps ?? []
+            });
+        }
+
+        return Ok(results);
+    }
+
     [HttpGet("stats")]
     public async Task<ActionResult<DashboardStats>> GetStats()
     {

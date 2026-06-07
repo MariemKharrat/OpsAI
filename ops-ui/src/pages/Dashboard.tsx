@@ -1,20 +1,60 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart3, AlertTriangle, CheckCircle2, Clock, Ticket } from 'lucide-react';
-import { getStats } from '../services/api';
+import { BarChart3, AlertTriangle, CheckCircle2, Clock, Ticket, Filter, X } from 'lucide-react';
+import { getStats, getTickets } from '../services/api';
 import { StatCard, Card } from '../components/Card';
 import { PriorityBadge, StatusBadge, CategoryBadge } from '../components/Badge';
-import type { DashboardStats } from '../types';
+import type { DashboardStats, Ticket as TicketType, TicketStatus, TicketPriority, TicketCategory } from '../types';
+
+const STATUSES: TicketStatus[] = ['New', 'Open', 'InProgress', 'Pending', 'Resolved', 'Closed'];
+const PRIORITIES: TicketPriority[] = ['Critical', 'High', 'Medium', 'Low'];
+const CATEGORIES: TicketCategory[] = [
+  'Hardware', 'Software', 'Network', 'Security', 'AccessPermissions',
+  'Email', 'Printing', 'VPN', 'AccountManagement', 'Other',
+];
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [filteredTickets, setFilteredTickets] = useState<TicketType[]>([]);
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterPriority, setFilterPriority] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filtering, setFiltering] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    getStats().then(r => { setStats(r.data); setLoading(false); })
+    getStats().then(r => { setStats(r.data); setFilteredTickets(r.data.recentTickets); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
+
+  const hasFilters = filterStatus || filterPriority || filterCategory;
+
+  useEffect(() => {
+    if (!stats) return;
+    if (!hasFilters) {
+      setFilteredTickets(stats.recentTickets);
+      return;
+    }
+    setFiltering(true);
+    getTickets({
+      status: filterStatus || undefined,
+      priority: filterPriority || undefined,
+      category: filterCategory || undefined,
+      page: 1,
+      pageSize: 20,
+    }).then(res => {
+      setFilteredTickets(res.data.items);
+    }).catch(() => {
+      setFilteredTickets([]);
+    }).finally(() => setFiltering(false));
+  }, [filterStatus, filterPriority, filterCategory]);
+
+  const clearFilters = () => {
+    setFilterStatus('');
+    setFilterPriority('');
+    setFilterCategory('');
+  };
 
   if (loading) return <LoadingSkeleton />;
   if (!stats) return <p className="text-red-500">Failed to load dashboard data.</p>;
@@ -103,14 +143,76 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Recent Tickets */}
-      <Card title="Recent Tickets" subtitle="Latest tickets requiring attention"
+      {/* Tickets with Filter Bar */}
+      <Card title="Tickets" subtitle="Filter to find what needs attention"
         action={
           <button onClick={() => navigate('/tickets/new')}
             className="text-sm text-blue-600 hover:text-blue-700 font-medium">
             + New Ticket
           </button>
         }>
+        {/* Filter Bar */}
+        <div className="flex flex-wrap items-center gap-3 mb-4 pb-4 border-b border-gray-100">
+          <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
+            <Filter className="w-4 h-4" />
+            Filters
+          </div>
+
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Statuses</option>
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>{s === 'InProgress' ? 'In Progress' : s}</option>
+            ))}
+          </select>
+
+          <select
+            value={filterPriority}
+            onChange={(e) => setFilterPriority(e.target.value)}
+            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Priorities</option>
+            {PRIORITIES.map((p) => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+          </select>
+
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Categories</option>
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c === 'AccessPermissions' ? 'Access & Permissions' :
+                 c === 'AccountManagement' ? 'Account Management' : c}
+              </option>
+            ))}
+          </select>
+
+          {hasFilters && (
+            <button
+              onClick={clearFilters}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+              Clear
+            </button>
+          )}
+        </div>
+
+        {/* Ticket Table */}
+        {filtering ? (
+          <div className="space-y-3 animate-pulse">
+            {[1, 2, 3].map((i) => <div key={i} className="h-10 bg-gray-100 rounded" />)}
+          </div>
+        ) : filteredTickets.length === 0 ? (
+          <p className="text-center py-8 text-gray-500 text-sm">No tickets match the selected filters.</p>
+        ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -125,7 +227,7 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {stats.recentTickets.map(ticket => (
+              {filteredTickets.map(ticket => (
                 <tr key={ticket.id} className="hover:bg-gray-50">
                   <td className="py-3 font-mono text-xs text-gray-500">{ticket.ticketNumber}</td>
                   <td className="py-3 max-w-xs truncate">{ticket.subject}</td>
@@ -144,6 +246,7 @@ export default function Dashboard() {
             </tbody>
           </table>
         </div>
+        )}
       </Card>
     </div>
   );

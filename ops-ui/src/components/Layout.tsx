@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Bot, Settings } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Bot, Settings, List } from 'lucide-react';
 
 interface Props { children: ReactNode }
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/tickets', label: 'All Tickets', icon: List },
   { to: '/tickets/new', label: 'New Ticket', icon: PlusCircle },
 ];
 
