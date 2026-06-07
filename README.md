@@ -14,6 +14,7 @@ An enterprise IT support ticketing system with AI-powered triage, knowledge retr
 ---
 ![alt text](Home.png)
 
+![alt text](image.png)
 ## Application Workflow
 
 The complete end-to-end workflow from ticket submission to resolution, showing how each feature maps to Azure AI services:
